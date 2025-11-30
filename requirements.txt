@@ -4,6 +4,7 @@ munch
 torch
 pydub
 pyyaml
+phonemizer
 librosa
 nltk
 matplotlib
