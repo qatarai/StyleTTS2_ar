@@ -32,7 +32,7 @@ from accelerate import Accelerator
 from accelerate.utils import LoggerType
 from accelerate import DistributedDataParallelKwargs
 
-from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 import logging
 from accelerate.logging import get_logger
@@ -49,7 +49,18 @@ def main(config_path):
     ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
     accelerator = Accelerator(project_dir=log_dir, split_batches=True, kwargs_handlers=[ddp_kwargs])    
     if accelerator.is_main_process:
-        writer = SummaryWriter(log_dir + "/tensorboard")
+        wandb.init(
+            project="StyleTTS2_"+log_dir.split('/')[-1],
+            name="first_stage",
+            config={
+                "epochs": config['epochs_1st'],
+                "batch_size": config['batch_size'],
+                "model_params": config['model_params'],
+                "loss_params": config['loss_params'],
+                "preprocess_params": config['preprocess_params'],
+                "optimizer_params": config['optimizer_params'],
+            }
+        )
 
     # write logs
     file_handler = logging.FileHandler(osp.join(log_dir, 'train.log'))
@@ -307,20 +318,28 @@ def main(config_path):
             
             iters = iters + 1
             
-            if (i+1)%log_interval == 0 and accelerator.is_main_process:
-                log_print ('Epoch [%d/%d], Step [%d/%d], Mel Loss: %.5f, Gen Loss: %.5f, Disc Loss: %.5f, Mono Loss: %.5f, S2S Loss: %.5f, SLM Loss: %.5f'
-                        %(epoch+1, epochs, i+1, len(train_list)//batch_size, running_loss / log_interval, loss_gen_all, d_loss, loss_mono, loss_s2s, loss_slm), logger)
+            if (i + 1) % log_interval == 0 and accelerator.is_main_process:
+                log_print(
+                    'Epoch [%d/%d], Step [%d/%d], Mel Loss: %.5f, Gen Loss: %.5f, Disc Loss: %.5f, Mono Loss: %.5f, S2S Loss: %.5f, SLM Loss: %.5f'
+                    % (epoch + 1, epochs, i + 1, len(train_list) // batch_size,
+                    running_loss / log_interval, loss_gen_all, d_loss, loss_mono, loss_s2s, loss_slm),
+                    logger
+                )
                 
-                writer.add_scalar('train/mel_loss', running_loss / log_interval, iters)
-                writer.add_scalar('train/gen_loss', loss_gen_all, iters)
-                writer.add_scalar('train/d_loss', d_loss, iters)
-                writer.add_scalar('train/mono_loss', loss_mono, iters)
-                writer.add_scalar('train/s2s_loss', loss_s2s, iters)
-                writer.add_scalar('train/slm_loss', loss_slm, iters)
+                # Log to wandb
+                wandb.log({
+                    "train/mel_loss": running_loss / log_interval,
+                    "train/gen_loss": loss_gen_all,
+                    "train/d_loss": d_loss,
+                    "train/mono_loss": loss_mono,
+                    "train/s2s_loss": loss_s2s,
+                    "train/slm_loss": loss_slm,
+                    "iters": iters,
+                    "epoch": epoch + 1
+                })
 
                 running_loss = 0
-                
-                print('Time elasped:', time.time()-start_time)
+                print('Time elapsed:', time.time() - start_time)
                                 
         loss_test = 0
 
@@ -389,9 +408,15 @@ def main(config_path):
             print('Epochs:', epoch + 1)
             log_print('Validation loss: %.3f' % (loss_test / iters_test) + '\n\n\n\n', logger)
             print('\n\n\n')
-            writer.add_scalar('eval/mel_loss', loss_test / iters_test, epoch + 1)
+            wandb.log({
+                "eval/mel_loss": loss_test / iters_test,
+                "epoch": epoch + 1
+            })
             attn_image = get_image(s2s_attn[0].cpu().numpy().squeeze())
-            writer.add_figure('eval/attn', attn_image, epoch)
+            wandb.log({
+                "eval/attn": wandb.Image(attn_image),
+                "epoch": epoch + 1
+            })
             
             with torch.no_grad():
                 for bib in range(len(asr)):
@@ -406,9 +431,16 @@ def main(config_path):
                     
                     y_rec = model.decoder(en, F0_real, real_norm, s)
                     
-                    writer.add_audio('eval/y' + str(bib), y_rec.cpu().numpy().squeeze(), epoch, sample_rate=sr)
+                    wandb.log({
+                        f"eval/reconstructed_audio_{bib}": wandb.Audio(y_rec.cpu().numpy().squeeze(), sample_rate=sr),
+                        "epoch": epoch + 1
+                    })
+
                     if epoch == 0:
-                        writer.add_audio('gt/y' + str(bib), waves[bib].squeeze(), epoch, sample_rate=sr)
+                        wandb.log({
+                            f"eval/gt_audio_{bib}": wandb.Audio(gt.cpu().numpy().squeeze(), sample_rate=sr),
+                            "epoch": epoch + 1
+                        })
                     
                     if bib >= 6:
                         break
