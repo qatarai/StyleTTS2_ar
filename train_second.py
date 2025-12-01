@@ -731,10 +731,10 @@ def main(config_path):
 
                     y_pred = model.decoder(en, F0_fake, N_fake, s)
 
-                    wandb.log({'eval/y_pred' + str(bib): wandb.Audio(y_pred.cpu().numpy().squeeze(), sample_rate=sr)}) 
+                    wandb.log({'eval/y_pred' + str(bib): wandb.Audio(pred, sample_rate=sr)}) 
 
                     if epoch == 0:
-                        wandb.log({'eval/y_gt' + str(bib): wandb.Audio(waves[bib].cpu().numpy().squeeze(), sample_rate=sr)})
+                        wandb.log({'eval/y_gt' + str(bib): wandb.Audio(waves[bib].squeeze(), sample_rate=sr)})
 
                     if bib >= 5:
                         break
