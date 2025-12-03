@@ -684,6 +684,11 @@ def main(config_path):
 
                     F0_real, _, F0 = model.pitch_extractor(gt.unsqueeze(1)) 
 
+                    def ensure_2d(t): return t.unsqueeze(-1) if t.ndim == 1 else t
+                    F0_real = ensure_2d(F0_real)
+                    F0_fake = ensure_2d(F0_fake)
+                    N_fake = ensure_2d(N_fake)
+
                     loss_F0 = F.l1_loss(F0_real, F0_fake) / 10
 
                     loss_test += (loss_mel).mean()
