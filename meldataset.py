@@ -42,7 +42,7 @@ class TextCleaner:
             try:
                 indexes.append(self.word_index_dictionary[char])
             except KeyError:
-                print(text)
+                print(f"[KeyError] {char} is not found in the dictionary.")
         return indexes
 
 np.random.seed(1)
