@@ -159,13 +159,18 @@ def main(config_path):
         optimizer.optimizers[k] = accelerator.prepare(optimizer.optimizers[k])
         optimizer.schedulers[k] = accelerator.prepare(optimizer.schedulers[k])
     
-    with accelerator.main_process_first():
-        if config.get('pretrained_model', '') != '':
-            model, optimizer, start_epoch, iters = load_checkpoint(model,  optimizer, config['pretrained_model'],
-                                        load_only_params=config.get('load_only_params', True))
-        else:
-            start_epoch = 0
-            iters = 0
+    start_epoch = 0
+    iters = 0
+    ckpt_path = config.get("pretrained_model", None)
+    if ckpt_path:
+        with accelerator.main_process_first():
+            model, optimizer, start_epoch, iters = load_checkpoint(
+                model,
+                optimizer,
+                ckpt_path,
+                accelerator=accelerator,
+                load_only_params=config.get("load_only_params", False)
+            )
     
     # in case not distributed
     try:
