@@ -50,8 +50,8 @@ def main(config_path):
     accelerator = Accelerator(project_dir=log_dir, split_batches=True, kwargs_handlers=[ddp_kwargs])    
     if accelerator.is_main_process:
         wandb.init(
-            project="StyleTTS2_"+log_dir.split('/')[-1],
-            name="first_stage_ASR_"+str(time.time()),
+            project="StyleTTS2_ClArTTS",
+            name="first_stage_"+config['run_name'],
             config={
                 "epochs": config['epochs_1st'],
                 "batch_size": config['batch_size'],

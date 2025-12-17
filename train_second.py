@@ -57,8 +57,8 @@ def main(config_path):
     if not osp.exists(log_dir): os.makedirs(log_dir, exist_ok=True)
     shutil.copy(config_path, osp.join(log_dir, osp.basename(config_path)))
     wandb.init(
-        project="StyleTTS2_"+log_dir.split('/')[-1],
-        name="second_stage_ASR_"+str(time.time()),
+        project="StyleTTS2_ClArTTS",
+        name="second_stage_"+config['run_name'],
         config={
             "epochs": config['epochs_1st'],
             "batch_size": config['batch_size'],
