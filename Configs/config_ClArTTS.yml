@@ -1,13 +1,14 @@
 log_dir: "../models/ClArTTS"
 first_stage_path: "first_stage.pth"
-save_freq: 2
+run_name: "ClArTTS_base"
+save_freq: 10
 log_interval: 10
 device: "cuda"
-epochs_1st: 100 # number of epochs for first stage training (pre-training)
-epochs_2nd: 50 # number of peochs for second stage training (joint training)
-batch_size: 16
+epochs_1st: 200 # number of epochs for first stage training (pre-training)
+epochs_2nd: 100 # number of peochs for second stage training (joint training)
+batch_size: 8
 max_len: 400 # maximum number of frames
-pretrained_model: ""
+pretrained_model: "" # path to pre-trained model
 second_stage_load_pretrained: true # set to true if the pre-trained model is for 2nd stage
 load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
 
@@ -88,7 +89,7 @@ loss_params:
     
     lambda_mono: 1. # monotonic alignment loss (1st stage, TMA)
     lambda_s2s: 1. # sequence-to-sequence loss (1st stage, TMA)
-    TMA_epoch: 20 # TMA starting epoch (1st stage)
+    TMA_epoch: 50 # TMA starting epoch (1st stage)
 
     lambda_F0: 1. # F0 reconstruction loss (2nd stage)
     lambda_norm: 1. # norm reconstruction loss (2nd stage)
@@ -97,8 +98,8 @@ loss_params:
     lambda_sty: 1. # style reconstruction loss (2nd stage)
     lambda_diff: 1. # score matching loss (2nd stage)
     
-    diff_epoch: 10 # style diffusion starting epoch (2nd stage)
-    joint_epoch: 20 # joint training starting epoch (2nd stage)
+    diff_epoch: 20 # style diffusion starting epoch (2nd stage)
+    joint_epoch: 50 # joint training starting epoch (2nd stage)
 
 optimizer_params:
   lr: 0.0001 # general learning rate
