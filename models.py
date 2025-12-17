@@ -583,9 +583,12 @@ class DurationEncoder(nn.Module):
     
 def load_F0_models(path):
     # load F0 model
-
     F0_model = JDCNet(num_class=1, seq_len=192)
-    params = torch.load(path, map_location='cpu', weights_only=False)['net']
+    all_params = torch.load(path, map_location='cpu', weights_only=False)
+    if path.endswith('.t7'):
+        params = all_params['net']
+    else:
+        params = all_params['model']
     F0_model.load_state_dict(params)
     _ = F0_model.train()
     
